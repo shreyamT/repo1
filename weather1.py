@@ -98,7 +98,7 @@ def weather_view():
     current_weather = get_current_weather(city)
 
     # Read historical data and prepare models
-    historical_data = read_historical_data('/kaggle/input/weather2/weather.csv')
+    historical_data = read_historical_data('https://github.com/shreyamT/repo1/blob/main/weather.csv')
 
     x, y, le = prepare_data(historical_data)
     rain_model = train_rain_model(x, y)
