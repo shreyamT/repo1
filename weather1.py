@@ -36,19 +36,34 @@ def get_current_weather(city):
         'pressure': data['main']['pressure'],
         'wind_gust_speed': data['wind']['speed']
     }
-def read_historical_data(filename):
+def read_historical_data(file_or_url):
     try:
-        df = pd.read_csv(filename)
+        if file_or_url.startswith("http://") or file_or_url.startswith("https://"):
+            # Handle URL
+            response = requests.get(file_or_url)
+            response.raise_for_status()  # Raise an error for bad HTTP responses
+            from io import StringIO
+            data = StringIO(response.text)  # Convert text content to a file-like object
+            df = pd.read_csv(data)
+        else:
+            # Handle local file
+            df = pd.read_csv(file_or_url)
+        
+        # Clean the data
         df = df.dropna()
         df = df.drop_duplicates()
+        
         return df
+
     except FileNotFoundError:
-        print(f"Error: The file {filename} does not exist.")
-    except pd.errors.EmptyDataError:
-        print(f"Error: The file {filename} is empty or corrupted.")
+        print(f"Error: The file {file_or_url} does not exist.")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-        return pd.DataFrame()  # Return an empty DataFrame as fallback
+    
+    # Return an empty DataFrame as a fallback
+    return pd.DataFrame()
+
+
 def prepare_data(data):
     le = LabelEncoder()
     data['WindGustDir'] = le.fit_transform(data['WindGustDir'])
@@ -98,7 +113,9 @@ def weather_view():
     current_weather = get_current_weather(city)
 
     # Read historical data and prepare models
-    historical_data = read_historical_data('https://github.com/shreyamT/repo1/blob/main/weather.csv')
+    #historical_data = read_historical_data('/kaggle/input/weather2/weather.csv')
+    urlset = "https://raw.githubusercontent.com/shreyamT/repo1/main/weather.csv"
+    historical_data = read_historical_data(urlset)
 
     x, y, le = prepare_data(historical_data)
     rain_model = train_rain_model(x, y)
@@ -169,4 +186,6 @@ def weather_view():
     for time, humidity in zip(future_times, future_hum):
         print(f"{time}: {round(humidity, 1)}%")
 
-  weather_view()
+
+#___MAIN___
+weather_view()
