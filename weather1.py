@@ -1,8 +1,6 @@
 import requests
 import pandas as pd
 import numpy as np
-import os
-os.system('sudo pip instll scikit-learn')
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import LabelEncoder
