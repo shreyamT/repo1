@@ -115,7 +115,7 @@ def weather_view():
     # Read historical data and prepare models
     #historical_data = read_historical_data('/kaggle/input/weather2/weather.csv')
     urlset = "https://raw.githubusercontent.com/shreyamT/repo1/main/weather.csv"
-    historical_data = read_historical_data(urlset)
+    historical_data = read_historical_data('weather.csv')
 
     x, y, le = prepare_data(historical_data)
     rain_model = train_rain_model(x, y)
