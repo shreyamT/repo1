@@ -1,15 +1,31 @@
-# app.py
 import streamlit as st
-from weather1 import get_current_weather, read_historical_data, prepare_data, train_rain_model, prepare_regression_data, train_regression_model, predict_future
+import joblib
+import pandas as pd
+from weather1 import get_current_weather, prepare_regression_data, predict_future
+
+# Load pre-trained models
+@st.cache_resource
+def load_models():
+    rain_model = joblib.load("rain_model.pkl")
+    temp_model = joblib.load("temp_model.pkl")
+    hum_model = joblib.load("hum_model.pkl")
+    return rain_model, temp_model, hum_model
 
 def main():
     st.title("Weather Prediction App")
+
+    # Load models
+    st.info("Loading pre-trained models...")
+    rain_model, temp_model, hum_model = load_models()
+    st.success("Models loaded successfully!")
 
     # Input for city
     city = st.text_input("Enter city:", "New York")
 
     if st.button("Get Current Weather"):
-        current_weather = get_current_weather(city)
+        with st.spinner("Fetching current weather..."):
+            current_weather = get_current_weather(city)
+        
         if "error" in current_weather:
             st.error(current_weather["error"])
         else:
@@ -25,31 +41,33 @@ def main():
     data_file = st.file_uploader("Upload historical weather data (CSV)", type=["csv"])
 
     if data_file is not None:
-        historical_data = read_historical_data(data_file)
+        with st.spinner("Processing uploaded data..."):
+            try:
+                historical_data = pd.read_csv(data_file)
+                historical_data = historical_data.dropna().drop_duplicates()
 
-        # Prepare data and train models
-        x, y, le = prepare_data(historical_data)
-        rain_model = train_rain_model(x, y)
-        x_temp, y_temp = prepare_regression_data(historical_data, 'Temp')
-        x_hum, y_hum = prepare_regression_data(historical_data, 'Humidity')
-        temp_model = train_regression_model(x_temp, y_temp)
-        hum_model = train_regression_model(x_hum, y_hum)
+                # Prepare data for predictions
+                x_temp, y_temp = prepare_regression_data(historical_data, 'Temp')
+                x_hum, y_hum = prepare_regression_data(historical_data, 'Humidity')
 
-        st.success("Models trained successfully")
+                st.success("Data processed successfully!")
 
-        # Make future predictions
-        if st.button("Predict Future Weather"):
-            future_temp = predict_future(temp_model, current_weather['temp_min'])
-            future_hum = predict_future(hum_model, current_weather['humidity'])
+                # Make predictions
+                if st.button("Predict Future Weather"):
+                    future_temp = predict_future(temp_model, historical_data['Temp'].iloc[-1])
+                    future_hum = predict_future(hum_model, historical_data['Humidity'].iloc[-1])
 
-            # Display future predictions
-            st.write("\nFuture Temp:")
-            for i, temp in enumerate(future_temp):
-                st.write(f"Hour {i+1}: {round(temp, 1)}C")
+                    # Display future predictions
+                    st.write("\nFuture Temp:")
+                    for i, temp in enumerate(future_temp):
+                        st.write(f"Hour {i + 1}: {round(temp, 1)}C")
 
-            st.write("\nFuture Humidity:")
-            for i, humidity in enumerate(future_hum):
-                st.write(f"Hour {i+1}: {round(humidity, 1)}%")
+                    st.write("\nFuture Humidity:")
+                    for i, humidity in enumerate(future_hum):
+                        st.write(f"Hour {i + 1}: {round(humidity, 1)}%")
+
+            except Exception as e:
+                st.error(f"An error occurred: {str(e)}")
 
 if __name__ == "__main__":
     main()
