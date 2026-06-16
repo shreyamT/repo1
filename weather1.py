@@ -1,6 +1,8 @@
 import requests
 import pandas as pd
 import numpy as np
+import os
+from dotenv import load_dotenv
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import LabelEncoder
@@ -8,10 +10,16 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from datetime import datetime, timedelta
 import pytz
 
+# Load environment variables from .env file
+load_dotenv()
 
 BASE_URL= 'https://api.openweathermap.org/data/2.5/'
-API_KEY='cb6888afcc7062ec5277c708a99bf566'
+API_KEY = os.getenv('OPENWEATHER_API_KEY')
+
 def get_current_weather(city):
+    if not API_KEY:
+        return {"error": "API Key not found. Please check your .env file."}
+    
     url = f"{BASE_URL}weather?q={city}&appid={API_KEY}&units=metric"
     response = requests.get(url)
     
@@ -188,4 +196,5 @@ def weather_view():
 
 
 #___MAIN___
-weather_view()
+if __name__ == "__main__":
+    weather_view()
